@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <title>/dev/All</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.2.1/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      template: `
+      <div class="container">
+        <h1>/dev/All</h1>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" placeholder="Buscar posts" aria-label="Buscar" aria-describedby="basic-addon2" v-model="searchField">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" v-on:click="loadPosts(searchField)" >Buscar</button>
+          </div>
+        </div>
+        <div v-for="post in posts" class="post">
+          <h2>{{ post.title }}</h2>
+          <p>{{ post.content}} (...)</p>
+          <p>Cliques: {{ post.clicks }} - {{ post.publicationDate }}</p>
+          <p>Em: <a v-bind:href=post.blogUrl target="_blank">{{ post.blogName }}</a></p>
+          <div class="statistics">
+            <p><i class="bi bi-hand-thumbs-up">&nbsp;{{ post.votes.positive }}</i></p>
+            <p><i class="bi bi-hand-thumbs-down">&nbsp;{{ post.votes.negative }}</i></p>
+            <p><i class="bi bi-chat">&nbsp;{{ post.comments }}</i></p>
+            <p><i class="bi bi-bookmark">&nbsp;{{ post.favs }}</i></p>
+         </div>
+        </div>
+      </div>
+      `,
+      data() {
+        return {
+          posts: [],
+          searchField: ""
+        }
+      },
+      methods: {
+        loadPosts(search){
+          let posts = this.posts
+          let searchField = this.searchField
+          axios.get('https://api.devall.com.br/api/v1/post' + (search ? `?search=${search}` : ''))
+          .then(function(response){
+            searchField = ""
+            while(posts.length) {
+              posts.pop();
+            }
+            response.data.forEach(post => {
+              posts.push({
+                  title: post.titulo,
+                  content: post.resumo,
+                  thumbnail: post.thumbnail,
+                  clicks: post.cliques,
+                  publicationDate: post.dataPublicacao,
+                  blogName: post.blog.nome,
+                  blogUrl: post.blog.url ?? 'https://devall.com.br/',
+                  comments: post.comentarios,
+                  votes: {
+                    positive: post.votosPositivos,
+                    negative: post.votosNegativos
+                  },
+                  favs: post.favoritos
+                })
+            });
+          }).catch(function(error){
+            console.log(error)
+          })
+        }
+      },
+      beforeMount(){
+        this.loadPosts()
+      },
+    })
+  </script>
+
+</body>
+</html>
+
+<style>
+
+  div.post {
+    position: relative;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding: 20px;
+    border-radius: 10px ;
+    box-shadow: 2px 2px 1px 0px rgba(0, 0, 0, 0.3);
+  }
+
+  div.statistics {
+    position: absolute;
+    display: inline;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  div.statistics > p{
+    display: inline-block;
+    margin: 0px 10px;
+  }
+</style>
